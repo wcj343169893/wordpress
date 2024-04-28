@@ -222,6 +222,10 @@ function image_downsize( $id, $size = 'medium' ) {
 	 * Otherwise, a non-image type could be returned.
 	 */
 	if ( ! $is_image ) {
+        //判断$img_url是否为外链图片
+        if (str_starts_with($img_url, 'http') && empty($meta)) {
+            return array($img_url, 0, 0, false);
+        }
 		if ( ! empty( $meta['sizes']['full'] ) ) {
 			$img_url          = str_replace( $img_url_basename, $meta['sizes']['full']['file'], $img_url );
 			$img_url_basename = $meta['sizes']['full']['file'];

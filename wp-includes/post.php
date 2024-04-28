@@ -4456,7 +4456,9 @@ function wp_insert_post( $postarr, $wp_error = false, $fire_after_hooks = true )
 	}
 
 	$post_name = wp_unique_post_slug( $post_name, $post_id, $post_status, $post_type, $post_parent );
-
+    if ( is_wp_error( $post_name ) ) {
+        return $post_name;
+    }
 	// Don't unslash.
 	$post_mime_type = isset( $postarr['post_mime_type'] ) ? $postarr['post_mime_type'] : '';
 
@@ -5091,7 +5093,7 @@ function wp_resolve_post_date( $post_date = '', $post_date_gmt = '' ) {
  * @param string $post_status No uniqueness checks are made if the post is still draft or pending.
  * @param string $post_type   Post type.
  * @param int    $post_parent Post parent ID.
- * @return string Unique slug for the post, based on $post_name (with a -1, -2, etc. suffix)
+ * @return string|WP_Error slug for the post, based on $post_name (with a -1, -2, etc. suffix)
  */
 function wp_unique_post_slug( $slug, $post_id, $post_status, $post_type, $post_parent ) {
 	if ( in_array( $post_status, array( 'draft', 'pending', 'auto-draft' ), true )
@@ -5241,6 +5243,12 @@ function wp_unique_post_slug( $slug, $post_id, $post_status, $post_type, $post_p
 			|| $conflicts_with_date_archive
 			|| $is_bad_flat_slug
 		) {
+            //不允许重复slug
+            return new WP_Error(
+                'rest_post_exists',
+                __( 'Cannot create existing post.' ),
+                array( 'status' => 400 )
+            );
 			$suffix = 2;
 			do {
 				$alt_post_name   = _truncate_post_slug( $slug, 200 - ( strlen( $suffix ) + 1 ) ) . "-$suffix";
@@ -6599,6 +6607,11 @@ function wp_get_attachment_url( $attachment_id = 0 ) {
 
 	$attachment_id = (int) $attachment_id;
 
+    $file = get_post_meta( $attachment_id, '_wp_attached_file', true );
+    //直接获取http链接
+    if ($file && str_starts_with($file, 'http')) {
+        return $file;
+    }
 	$post = get_post( $attachment_id );
 
 	if ( ! $post ) {
@@ -6611,13 +6624,16 @@ function wp_get_attachment_url( $attachment_id = 0 ) {
 
 	$url = '';
 	// Get attached file.
-	$file = get_post_meta( $post->ID, '_wp_attached_file', true );
+	//$file = get_post_meta( $post->ID, '_wp_attached_file', true );
 	if ( $file ) {
 		// Get upload directory.
 		$uploads = wp_get_upload_dir();
 		if ( $uploads && false === $uploads['error'] ) {
 			// Check that the upload base exists in the file location.
-			if ( str_starts_with( $file, $uploads['basedir'] ) ) {
+            //http链接
+            if (str_starts_with($file, 'http')) {
+                return $file;
+            }elseif ( str_starts_with( $file, $uploads['basedir'] ) ) {
 				// Replace file location with url location.
 				$url = str_replace( $uploads['basedir'], $uploads['baseurl'], $file );
 			} elseif ( str_contains( $file, 'wp-content/uploads' ) ) {

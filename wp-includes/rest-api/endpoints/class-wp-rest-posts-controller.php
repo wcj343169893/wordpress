@@ -716,6 +716,10 @@ class WP_REST_Posts_Controller extends WP_REST_Controller {
 				unstick_post( $post_id );
 			}
 		}
+        //featured_media_url
+        if (isset( $request['featured_media_url'] ) ) {
+            $this->handle_featured_media_url( $request['featured_media_url'], $post_id );
+        }
 
 		if ( ! empty( $schema['properties']['featured_media'] ) && isset( $request['featured_media'] ) ) {
 			$this->handle_featured_media( $request['featured_media'], $post_id );
@@ -1469,6 +1473,18 @@ class WP_REST_Posts_Controller extends WP_REST_Controller {
 		return $post_status;
 	}
 
+    /**
+     * 用url地址作为特色图片
+     * @param $featured_media_url
+     * @param $post_id
+     * @return void
+     */
+    protected function handle_featured_media_url($featured_media_url, $post_id)
+    {
+        //新增wp_postmeta表数据
+        add_post_meta($post_id, '_wp_attached_file', $featured_media_url, true);
+        add_post_meta($post_id, '_thumbnail_id', $post_id);
+    }
 	/**
 	 * Determines the featured media based on a request param.
 	 *
