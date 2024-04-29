@@ -4454,10 +4454,16 @@ function wp_insert_post( $postarr, $wp_error = false, $fire_after_hooks = true )
 	if ( 'trash' === $post_status && 'trash' !== $previous_status && 'new' !== $previous_status ) {
 		$post_name = wp_add_trashed_suffix_to_post_name_for_post( $post_id );
 	}
-
-	$post_name = wp_unique_post_slug( $post_name, $post_id, $post_status, $post_type, $post_parent );
-    if ( is_wp_error( $post_name ) ) {
-        return $post_name;
+    //判断是否存在slug，如果存在则使用原来的ID
+    $slugId = wp_id_post_slug($post_name, $post_id, $post_type);
+    if(empty($slugId)){
+        $post_name = wp_unique_post_slug( $post_name, $post_id, $post_status, $post_type, $post_parent );
+        if ( is_wp_error( $post_name ) ) {
+            return $post_name;
+        }
+    }else{
+        $post_id = $slugId;
+        $update = true;
     }
 	// Don't unslash.
 	$post_mime_type = isset( $postarr['post_mime_type'] ) ? $postarr['post_mime_type'] : '';
@@ -5079,7 +5085,11 @@ function wp_resolve_post_date( $post_date = '', $post_date_gmt = '' ) {
 	}
 	return $post_date;
 }
-
+function wp_id_post_slug($slug,$post_id,$post_type){
+    global $wpdb;
+    $check_sql       = "SELECT id FROM $wpdb->posts WHERE post_name = %s AND post_type = %s AND ID != %d LIMIT 1";
+    return $wpdb->get_var( $wpdb->prepare( $check_sql, $slug, $post_type, $post_id ) );
+}
 /**
  * Computes a unique slug for the post, when given the desired slug and some post details.
  *
@@ -5243,12 +5253,6 @@ function wp_unique_post_slug( $slug, $post_id, $post_status, $post_type, $post_p
 			|| $conflicts_with_date_archive
 			|| $is_bad_flat_slug
 		) {
-            //不允许重复slug
-            return new WP_Error(
-                'rest_post_exists',
-                __( 'Cannot create existing post.' ),
-                array( 'status' => 400 )
-            );
 			$suffix = 2;
 			do {
 				$alt_post_name   = _truncate_post_slug( $slug, 200 - ( strlen( $suffix ) + 1 ) ) . "-$suffix";
