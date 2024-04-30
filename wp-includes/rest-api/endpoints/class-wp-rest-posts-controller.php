@@ -1483,7 +1483,7 @@ class WP_REST_Posts_Controller extends WP_REST_Controller {
     {
         //新增wp_postmeta表数据
         add_post_meta($post_id, '_wp_attached_file', $featured_media_url, true);
-        add_post_meta($post_id, '_thumbnail_id', $post_id);
+        add_post_meta($post_id, '_thumbnail_id', $post_id,true);
     }
 	/**
 	 * Determines the featured media based on a request param.

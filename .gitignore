@@ -52,3 +52,4 @@ wp-content/advanced-cache.php
 wp-content/themes/
 wp-content/uploads/
 !wp-content/index.php
+.idea/deployment.xml
