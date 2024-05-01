@@ -1482,6 +1482,7 @@ class WP_REST_Posts_Controller extends WP_REST_Controller {
     protected function handle_featured_media_url($featured_media_url, $post_id)
     {
         //新增wp_postmeta表数据
+        delete_post_meta($post_id, '_wp_attached_file');
         add_post_meta($post_id, '_wp_attached_file', $featured_media_url, true);
         add_post_meta($post_id, '_thumbnail_id', $post_id,true);
     }
